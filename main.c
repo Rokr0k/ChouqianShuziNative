@@ -36,6 +36,33 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
 	RegisterClass(&wc);
 
+	HANDLE maShanZhengHandle = INVALID_HANDLE_VALUE;
+	HRSRC maShanZhengRes = FindResource(hInstance, MAKEINTRESOURCE(IDF_MASHANZHENG), L"BINARY");
+	if (maShanZhengRes)
+	{
+		HGLOBAL mem = LoadResource(hInstance, maShanZhengRes);
+		if (mem != NULL)
+		{
+			void* data = LockResource(mem);
+			size_t len = SizeofResource(hInstance, maShanZhengRes);
+			DWORD nFonts = 0;
+			maShanZhengHandle = AddFontMemResourceEx(data, len, NULL, &nFonts);
+		}
+	}
+	HANDLE notoSansSCHandle = INVALID_HANDLE_VALUE;
+	HRSRC notoSansSCRes = FindResource(hInstance, MAKEINTRESOURCE(IDF_NOTOSANSSC), L"BINARY");
+	if (notoSansSCRes)
+	{
+		HGLOBAL mem = LoadResource(hInstance, notoSansSCRes);
+		if (mem != NULL)
+		{
+			void* data = LockResource(mem);
+			size_t len = SizeofResource(hInstance, notoSansSCRes);
+			DWORD nFonts = 0;
+			notoSansSCHandle = AddFontMemResourceEx(data, len, NULL, &nFonts);
+		}
+	}
+
 	HWND hwnd = CreateWindow(lpszClassName, TEXT("抽签数字"), WS_OVERLAPPED | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, g_inst, NULL);
 	ShowWindow(hwnd, nCmdShow);
 
@@ -46,6 +73,9 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 		DispatchMessage(&msg);
 	}
 
+	RemoveFontMemResourceEx(maShanZhengHandle);
+	RemoveFontMemResourceEx(notoSansSCHandle);
+
 	return 0;
 }
 
@@ -55,10 +85,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	{
 	case WM_CREATE:
 	{
-		HFONT fTitle = CreateFont(50, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("KaiTi"));
-		HFONT fControl = CreateFont(30, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("Microsoft YaHei"));
-		HFONT fButton = CreateFont(25, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("Microsoft YaHei"));
-		HFONT fResult = CreateFont(200, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("KaiTi"));
+		HFONT fTitle = CreateFont(50, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("Noto Sans SC Regular"));
+		HFONT fControl = CreateFont(30, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("Noto Sans SC Regular"));
+		HFONT fButton = CreateFont(25, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("Noto Sans SC Regular"));
+		HFONT fResult = CreateFont(200, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("Ma Shan Zheng"));
 
 		g_background = CreateWindow(TEXT("STATIC"), NULL, WS_CHILD | WS_VISIBLE | SS_BITMAP, 0, 0, 500, 600, hwnd, NULL, g_inst, NULL);
 		SendMessage(g_background, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)LoadImage(g_inst, MAKEINTRESOURCE(IDB_BACKGROUND), IMAGE_BITMAP, 0, 0, 0));

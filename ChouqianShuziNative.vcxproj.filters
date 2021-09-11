@@ -37,4 +37,10 @@
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="MaShanZheng.ttf">
+      <Filter>Resource Files</Filter>
+    </Font>
+    <Font Include="NotoSansSC.otf" />
+  </ItemGroup>
 </Project>

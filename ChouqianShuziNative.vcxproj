@@ -151,6 +151,10 @@
     <Image Include="background.bmp" />
     <Image Include="chdimigo.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="MaShanZheng.ttf" />
+    <Font Include="NotoSansSC.otf" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

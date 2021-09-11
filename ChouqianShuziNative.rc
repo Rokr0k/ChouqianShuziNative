@@ -62,6 +62,16 @@ IDI_ICON                ICON                    "chdimigo.ico"
 
 IDB_BACKGROUND          BITMAP                  "background.bmp"
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// BINARY
+//
+
+IDF_MASHANZHENG         BINARY                  "MaShanZheng.ttf"
+
+IDF_NOTOSANSSC          BINARY                  "NotoSansSC.otf"
+
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
