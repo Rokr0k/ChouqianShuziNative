@@ -23,7 +23,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 {
 	g_inst = hInstance;
 
-	srand(GetTime());
+	srand((unsigned int)GetTime());
 
 	WNDCLASS wc;
 	wc.cbClsExtra = 0;
@@ -273,7 +273,7 @@ int validate()
 
 		free(text);
 
-		if (lpnSelections == 0)
+		if (nSelectionsLength == 0)
 			return 1;
 		else if (nbFlag)
 			return 2;
