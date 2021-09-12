@@ -11,16 +11,19 @@ int g_mode;
 
 LPCWSTR g_digit[11] = { TEXT("零"), TEXT("一"), TEXT("二"), TEXT("三"), TEXT("四"), TEXT("五"), TEXT("六"), TEXT("七"), TEXT("八"), TEXT("九"), TEXT("十") };
 
+unsigned long long GetTime();
+
+unsigned long long g_timer;
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
+int validate();
 void roll(HWND hwnd);
 
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpszCommandLine, _In_ int nCmdShow)
 {
 	g_inst = hInstance;
 
-	SYSTEMTIME time;
-	GetSystemTime(&time);
-	srand(time.wMilliseconds);
+	srand(GetTime());
 
 	WNDCLASS wc;
 	wc.cbClsExtra = 0;
@@ -129,7 +132,36 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 		switch (LOWORD(wp))
 		{
 		case 1:
-			roll(hwnd);
+		{
+			int state = validate();
+			switch(state)
+			{
+			case -1:
+				MessageBox(hwnd, TEXT("内存分配失败"), TEXT("错误"), MB_ICONERROR | MB_OK);
+				SetWindowText(g_result, NULL);
+				break;
+			case 0:
+				EnableWindow(g_start, FALSE);
+				EnableWindow(g_end, FALSE);
+				EnableWindow(g_exceptions, FALSE);
+				EnableWindow(g_selections, FALSE);
+				EnableWindow(g_roll, FALSE);
+				EnableWindow(g_change, FALSE);
+				g_timer = GetTime() + 10000000;
+				SetTimer(hwnd, 5521, 20, NULL);
+				break;
+			case 1:
+				MessageBox(hwnd, TEXT("没有可用的数字"), TEXT("警告"), MB_ICONERROR | MB_OK);
+				SetWindowText(g_result, NULL);
+				if (!g_mode)
+					SetWindowText(g_exceptions, NULL);
+				break;
+			case 2:
+				MessageBox(hwnd, TEXT("有不可用的数字"), TEXT("警告"), MB_ICONERROR | MB_OK);
+				SetWindowText(g_result, NULL);
+				break;
+			}
+		}
 			break;
 		case 2:
 			g_mode = !g_mode;
@@ -175,11 +207,119 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 			return (LRESULT)GetStockObject(WHITE_BRUSH);
 		}
 	}
+	case WM_TIMER:
+		if (g_timer > GetTime())
+		{
+			LPWSTR result = calloc(4, sizeof(TCHAR));
+			if (result != NULL)
+			{
+				result[0] = g_digit[rand() % 11][0];
+				result[1] = g_digit[rand() % 11][0];
+				result[2] = g_digit[rand() % 11][0];
+				SetWindowText(g_result, result);
+				free(result);
+			}
+		}
+		else
+		{
+			KillTimer(hwnd, 5521);
+			EnableWindow(g_start, TRUE);
+			EnableWindow(g_end, TRUE);
+			EnableWindow(g_exceptions, TRUE);
+			EnableWindow(g_selections, TRUE);
+			EnableWindow(g_roll, TRUE);
+			EnableWindow(g_change, TRUE);
+			roll(hwnd);
+		}
+		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
 	default:
 		return DefWindowProc(hwnd, msg, wp, lp);
+	}
+}
+
+int validate()
+{
+	if (g_mode)
+	{
+		LPWSTR text = malloc(sizeof(TCHAR) * 1024);
+		if (text == NULL)
+			return -1;
+
+		GetWindowText(g_selections, text, 1024);
+
+		int* lpnSelections = malloc(sizeof(int) * 512);
+		int nSelectionsLength = 0;
+
+		int nbFlag = 0;
+		TCHAR* buffer;
+		if (lpnSelections != NULL)
+		{
+			buffer = NULL;
+			LPWSTR token = wcstok_s(text, TEXT(" "), &buffer);
+			while (token)
+			{
+				lpnSelections[nSelectionsLength++] = _wtoi(token);
+				if (lpnSelections[nSelectionsLength - 1] < 0 || lpnSelections[nSelectionsLength - 1]>99)
+				{
+					nbFlag = 1;
+					break;
+				}
+				token = wcstok_s(NULL, TEXT(" "), &buffer);
+			}
+		}
+
+		free(text);
+
+		if (lpnSelections == 0)
+			return 1;
+		else if (nbFlag)
+			return 2;
+		else
+			return 0;
+	}
+	else
+	{
+		int nStart, nEnd;
+		LPWSTR text = malloc(sizeof(TCHAR) * 1024);
+		if (text == NULL)
+			return -1;
+
+		GetWindowText(g_start, text, 1024);
+		nStart = _wtoi(text);
+
+		GetWindowText(g_end, text, 1024);
+		nEnd = _wtoi(text) + 1;
+
+		int* lpbExceptions = calloc(nEnd - nStart, sizeof(int));
+
+		if (lpbExceptions == NULL)
+			return -1;
+
+		GetWindowText(g_exceptions, text, 1024);
+		TCHAR* buffer = NULL;
+		LPWSTR token = wcstok_s(text, TEXT(" "), &buffer);
+		while (token)
+		{
+			lpbExceptions[_wtoi(token) - nStart] = 1;
+			token = wcstok_s(NULL, TEXT(" "), &buffer);
+		}
+
+		free(text);
+
+		int flag = 1;
+		for (int i = 0; i < nEnd - nStart; i++)
+			if (!lpbExceptions[i])
+				flag = 0;
+
+		if (flag)
+			return 1;
+		else if (nStart < 0 || nStart > 99 || nEnd < 1 || nEnd > 100 || nStart > nEnd)
+			return 2;
+		else
+			return 0;
 	}
 }
 
@@ -189,7 +329,11 @@ void roll(HWND hwnd)
 	{
 		LPWSTR text = malloc(sizeof(TCHAR) * 1024);
 		if (text == NULL)
+		{
+			MessageBox(hwnd, TEXT("内存分配失败"), TEXT("错误"), MB_ICONSTOP | MB_OK);
+			SetWindowText(g_result, NULL);
 			return;
+		}
 
 		GetWindowText(g_selections, text, 1024);
 
@@ -203,12 +347,21 @@ void roll(HWND hwnd)
 			while (token)
 			{
 				lpnSelections[nSelectionsLength++] = _wtoi(token);
+				if (lpnSelections[nSelectionsLength - 1] < 0 || lpnSelections[nSelectionsLength - 1]>99)
+				{
+					MessageBox(hwnd, TEXT("有不可用的数字"), TEXT("警告"), MB_ICONSTOP | MB_OK);
+					SetWindowText(g_result, NULL);
+					free(text);
+					return;
+				}
 				token = wcstok_s(NULL, TEXT(" "), &buffer);
 			}
 		}
 		if (nSelectionsLength == 0)
 		{
-			MessageBox(hwnd, TEXT("没有数字"), TEXT("警告"), MB_ICONSTOP | MB_OK);
+			MessageBox(hwnd, TEXT("没有可用的数字"), TEXT("警告"), MB_ICONSTOP | MB_OK);
+			SetWindowText(g_result, NULL);
+			free(text);
 			return;
 		}
 
@@ -263,7 +416,11 @@ void roll(HWND hwnd)
 		LPWSTR text = malloc(sizeof(TCHAR) * 1024);
 
 		if (text == NULL)
+		{
+			MessageBox(hwnd, TEXT("内存分配失败"), TEXT("错误"), MB_ICONSTOP | MB_OK);
+			SetWindowText(g_result, NULL);
 			return;
+		}
 
 		GetWindowText(g_start, text, 1024);
 		nStart = _wtoi(text);
@@ -271,34 +428,44 @@ void roll(HWND hwnd)
 		GetWindowText(g_end, text, 1024);
 		nEnd = _wtoi(text) + 1;
 
-		int* lpnExceptions = calloc(nEnd - nStart, sizeof(int));
+		if (nStart < 0 || nStart>99 || nEnd < 1 || nEnd>100 || nStart > nEnd)
+		{
+			MessageBox(hwnd, TEXT("有不可用的数字"), TEXT("警告"), MB_ICONSTOP | MB_OK);
+			SetWindowText(g_result, NULL);
+			free(text);
+			return;
+		}
 
-		if (lpnExceptions != NULL)
+		int* lpbExceptions = calloc(nEnd - nStart, sizeof(int));
+
+		if (lpbExceptions != NULL)
 		{
 			GetWindowText(g_exceptions, text, 1024);
 			TCHAR* buffer = NULL;
 			LPWSTR token = wcstok_s(text, TEXT(" "), &buffer);
 			while (token)
 			{
-				lpnExceptions[_wtoi(token) - nStart] = 1;;
+				lpbExceptions[_wtoi(token) - nStart] = 1;;
 				token = wcstok_s(NULL, TEXT(" "), &buffer);
 			}
 
 			int flag = 1;
 			for (int i = 0; i < nEnd - nStart; i++)
-				if (!lpnExceptions[i])
+				if (!lpbExceptions[i])
 					flag = 0;
 			if (flag)
 			{
-				MessageBox(hwnd, TEXT("没有可以的数字"), TEXT("警告"), MB_ICONSTOP | MB_OK);
+				MessageBox(hwnd, TEXT("没有可用的数字"), TEXT("警告"), MB_ICONSTOP | MB_OK);
 				SetWindowText(g_exceptions, NULL);
+				SetWindowText(g_result, NULL);
+				free(text);
 				return;
 			}
 		}
 
 		int nResult = rand() % (nEnd - nStart) + nStart;
-		if (lpnExceptions != NULL)
-			while (lpnExceptions[nResult - nStart])
+		if (lpbExceptions != NULL)
+			while (lpbExceptions[nResult - nStart])
 				nResult = rand() % (nEnd - nStart) + nStart;
 
 		TCHAR lpszResult[10] = { 0 };
@@ -319,23 +486,33 @@ void roll(HWND hwnd)
 		}
 		SetWindowText(g_result, lpszResult);
 
-		if (lpnExceptions != NULL)
+		if (lpbExceptions != NULL)
 		{
-			LPWSTR number = malloc(sizeof(TCHAR) * 10);
+			LPWSTR number = malloc(sizeof(TCHAR) * 1024);
 			if (number != NULL)
 			{
+				_itow_s(nResult, number, 1024, 10);
 				GetWindowText(g_exceptions, text, 1024);
-				_itow_s(nResult, number, 10, 10);
 				if (wcslen(text) > 0)
-					wcscat_s(text, 1024, TEXT(" "));
-				wcscat_s(text, 1024, number);
-				SetWindowText(g_exceptions, text);
+					wcscat_s(number, 1024, TEXT(" "));
+				wcscat_s(number, 1024, text);
+				SetWindowText(g_exceptions, number);
 				free(number);
 			}
 
-			free(lpnExceptions);
+			free(lpbExceptions);
 		}
 
 		free(text);
 	}
+}
+
+unsigned long long GetTime()
+{
+	FILETIME file;
+	GetSystemTimeAsFileTime(&file);
+	ULARGE_INTEGER time;
+	time.HighPart = file.dwHighDateTime;
+	time.LowPart = file.dwLowDateTime;
+	return time.QuadPart;
 }

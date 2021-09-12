@@ -41,6 +41,8 @@
     <Font Include="MaShanZheng.ttf">
       <Filter>Resource Files</Filter>
     </Font>
-    <Font Include="NotoSansSC.otf" />
+    <Font Include="NotoSansSC.otf">
+      <Filter>Resource Files</Filter>
+    </Font>
   </ItemGroup>
 </Project>
