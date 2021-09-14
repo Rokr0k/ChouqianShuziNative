@@ -36,13 +36,11 @@
     <Image Include="background.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <Font Include="MaShanZheng.ttf">
+    <Image Include="jbackground.bmp">
       <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="NotoSansSC.otf">
+    </Image>
+    <Image Include="kbackground.bmp">
       <Filter>Resource Files</Filter>
-    </Font>
+    </Image>
   </ItemGroup>
 </Project>
